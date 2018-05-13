@@ -4,7 +4,7 @@ import os.path
 from enum import Enum
 import time
 
-WEBHOOK_URL = 'https://hooks.slack.com/services/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'
+WEBHOOK_URL = ''
 WC_COMPETITION = None # 17 for only WC matches
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
