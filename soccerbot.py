@@ -4,8 +4,8 @@ import os.path
 from enum import Enum
 import time
 
-WEBHOOK_URL = ''
-WC_COMPETITION = 17 # 17 for only WC matches
+WEBHOOK_URL = 'https://hooks.slack.com/services/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'
+WC_COMPETITION = None # 17 for only WC matches
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
 NOW_URL = '/live/football/now'
@@ -115,13 +115,13 @@ def build_event(player_list, current_match, event):
     active_team = current_match['homeTeam'] if event['team'] == current_match['homeTeamId'] else current_match['awayTeam']
     if (event['type'] == EventType.GOAL_SCORED.value or event['type'] == EventType.FREE_KICK_GOAL.value
         or event['type'] == EventType.FREE_KICK_GOAL.value):
-        event_message = ':soccer: GOOOOAL! {} {} *{}:{}* {}'.format(current_match['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        event_message = ':soccer: {} GOOOOAL! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
     elif event['type'] == EventType.YELLOW_CARD.value:
-        event_message = ':yellow_card_new: Yellow card {}'.format(current_match['time'])
+        event_message = ':yellow_card_new: {} Yellow card'.format(event['time'])
     elif event['type'] == EventType.RED_CARD.value:
-        event_message = ':red_card_new: Red card {}'.format(current_match['time'])
+        event_message = ':red_card_new: {} Red card'.format(event['time'])
     elif event['type'] == EventType.SUBSTITUTION.value:
-        event_message = ':arrows_counterclockwise: Substitution for {} {}'.format(active_team, current_match['time'])
+        event_message = ':arrows_counterclockwise: {} Substitution for {}'.format(event['time'], active_team)
         if player and sub_player:
             event_message += '\n> {} comes on for {}'.format(sub_player, player)
     elif event['type'] == EventType.MATCH_START.value:
@@ -132,11 +132,11 @@ def build_event(player_list, current_match, event):
         event_message = ':clock12: The match between {} and {} has ended. {} *{}:{}* {}'.format(current_match['homeTeam'], current_match['awayTeam'],
         current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
     elif event['type'] == EventType.OWN_GOAL.value:
-        event_message = ':soccer: Own Goal! {} {} *{}:{}* {}'.format(current_match['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        event_message = ':soccer: {} Own Goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
     elif event['type'] == EventType.PENALTY_GOAL.value:
-        event_message = ':soccer: Penalty goal! {} {} *{}:{}* {}'.format(current_match['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        event_message = ':soccer: {} Penalty goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
     elif event['type'] == EventType.PENALTY_MISSED.value:
-        event_message = ':no_entry_sign: Penalty missed! {}'.format(current_match['time'])
+        event_message = ':no_entry_sign: {} Penalty missed!'.format(event['time'])
     elif EventType.has_value(event['type']):
         event_message = None
     elif DEBUG:
