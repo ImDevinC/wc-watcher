@@ -179,6 +179,7 @@ def check_for_updates():
         if not player in player_list:
             player_list[player] = players[player]
 
+    done_matches = []
     for match in match_list:
         current_match = match_list[match]
         event_list = get_match_events(current_match['idCompetition'], current_match['idSeason'], current_match['idStage'], current_match['idMatch'])
@@ -189,6 +190,11 @@ def check_for_updates():
             current_match['events'].append(event)
             if not event_notification is None:
                 events.append(event_notification)
+            if event['type'] == EventType.MATCH_END.value:
+                done_matches.append(match)
+
+    for match in done_matches:
+        del match_list[match]
 
     save_matches(match_list)
     return events
