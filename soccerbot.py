@@ -4,7 +4,7 @@ import os.path
 from enum import Enum
 import time
 
-WEBHOOK_URL = ''
+WEBHOOK_URL = 'https://hooks.slack.com/services/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'
 WC_COMPETITION = None # 17 for only WC matches
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
@@ -190,7 +190,7 @@ def check_for_updates():
             current_match['events'].append(event)
             if not event_notification is None:
                 events.append(event_notification)
-            if event['type'] == EventType.MATCH_END.value:
+            if event_list[event]['type'] == EventType.MATCH_END.value:
                 done_matches.append(match)
 
     for match in done_matches:
@@ -205,7 +205,7 @@ def send_event(event):
     try:
         r = requests.post(WEBHOOK_URL, data=json.dumps(payload), headers=headers)
         r.raise_for_status()
-    except request.exceptions.HTTPError as ex:
+    except requests.exceptions.HTTPError as ex:
         print('Failed to send message: {}'.format(ex))
         return
 
