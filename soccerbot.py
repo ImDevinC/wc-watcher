@@ -13,8 +13,6 @@ MATCH_URL = '/timelines/{}/{}/{}/{}?language=en-US' # IdCompetition/IdSeason/IdS
 PLAYER_URL = ''
 TEAM_URL = ''
 
-DEBUG = True
-
 class EventType(Enum):
     GOAL_SCORED = 0
     YELLOW_CARD = 2
@@ -151,7 +149,7 @@ def build_event(player_list, current_match, event):
         extraInfo = True
     elif EventType.has_value(event['type']):
         event_message = None
-    elif DEBUG:
+    elif private.DEBUG:
         event_message = 'Missing event information for {} vs {}: Event {}\n{}'.format(current_match['homeTeam'], current_match['awayTeam'], event['type'], event['url'])
     else:
         event_message = None
@@ -220,8 +218,14 @@ def send_event(event):
         return
 
 if __name__ == '__main__':
+    count = 0
     while True:
         events = check_for_updates()
         for event in events:
             send_event(event)
+        count = count + 1
+        if count >= 60:
+          count = 0
+          if private.DEBUG:
+              send_event('Health ping') 
         time.sleep(60)

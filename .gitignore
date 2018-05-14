@@ -1,7 +1,7 @@
 venv/
 match_list.txt
 private.py
-
+nohup.out
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
