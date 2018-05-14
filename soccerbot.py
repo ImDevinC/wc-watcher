@@ -19,6 +19,7 @@ class EventType(Enum):
     GOAL_SCORED = 0
     YELLOW_CARD = 2
     RED_CARD = 3
+    DOUBLE_YELLOW = 4
     SUBSTITUTION = 5
     MATCH_START = 7
     HALF_END = 8
@@ -28,6 +29,7 @@ class EventType(Enum):
     CORNER_KICK = 16
     BLOCKED_SHOT_2 = 17
     FOUL = 18
+    UNKNOWN_3 = 22
     UNKNOWN_2 = 23
     MATCH_END = 26
     CROSSBAR = 32
@@ -113,13 +115,20 @@ def build_event(player_list, current_match, event):
     player = player_list.get(event['player'])
     sub_player = player_list.get(event['sub'])
     active_team = current_match['homeTeam'] if event['team'] == current_match['homeTeamId'] else current_match['awayTeam']
+    extraInfo = False
     if (event['type'] == EventType.GOAL_SCORED.value or event['type'] == EventType.FREE_KICK_GOAL.value
         or event['type'] == EventType.FREE_KICK_GOAL.value):
         event_message = ':soccer: {} GOOOOAL! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        extraInfo = True
     elif event['type'] == EventType.YELLOW_CARD.value:
         event_message = ':yellow_card_new: {} Yellow card'.format(event['time'])
+        extraInfo = True
     elif event['type'] == EventType.RED_CARD.value:
         event_message = ':red_card_new: {} Red card'.format(event['time'])
+        extraInfo = True
+    elif event['type'] == EventType.DOUBLE_YELLOW.value:
+        event_message = ':yellow_card_new: :red_card_new: {} Second yellow card'.format(event['time'])
+        extraInfo = True
     elif event['type'] == EventType.SUBSTITUTION.value:
         event_message = ':arrows_counterclockwise: {} Substitution for {}'.format(event['time'], active_team)
         if player and sub_player:
@@ -133,10 +142,13 @@ def build_event(player_list, current_match, event):
         current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
     elif event['type'] == EventType.OWN_GOAL.value:
         event_message = ':soccer: {} Own Goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        extraInfo = True
     elif event['type'] == EventType.PENALTY_GOAL.value:
         event_message = ':soccer: {} Penalty goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        extraInfo = True
     elif event['type'] == EventType.PENALTY_MISSED.value:
         event_message = ':no_entry_sign: {} Penalty missed!'.format(event['time'])
+        extraInfo = True
     elif EventType.has_value(event['type']):
         event_message = None
     elif DEBUG:
@@ -144,9 +156,7 @@ def build_event(player_list, current_match, event):
     else:
         event_message = None
 
-    if (event['type'] == EventType.GOAL_SCORED.value or event['type'] == EventType.YELLOW_CARD.value
-    or event['type'] == EventType.RED_CARD.value or event['type'] == EventType.OWN_GOAL.value
-    or event['type'] == EventType.PENALTY_GOAL.value or event['type'] == EventType.PENALTY_MISSED.value):
+    if (extraInfo):
         if player and active_team:
             event_message += '\n> {} ({})'.format(player, active_team)
         elif active_team:
