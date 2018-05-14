@@ -13,7 +13,7 @@ MATCH_URL = '/timelines/{}/{}/{}/{}?language=en-US' # IdCompetition/IdSeason/IdS
 PLAYER_URL = ''
 TEAM_URL = ''
 
-DEBUG = False
+DEBUG = True
 
 class EventType(Enum):
     GOAL_SCORED = 0
