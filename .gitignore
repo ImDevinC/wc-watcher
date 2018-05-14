@@ -1,5 +1,6 @@
 venv/
 match_list.txt
+private.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

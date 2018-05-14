@@ -3,8 +3,8 @@ import json
 import os.path
 from enum import Enum
 import time
+import private
 
-WEBHOOK_URL = ''
 WC_COMPETITION = None # 17 for only WC matches
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
@@ -213,7 +213,7 @@ def send_event(event):
     headers = {'Content-Type': 'application/json'}
     payload = {'text': event}
     try:
-        r = requests.post(WEBHOOK_URL, data=json.dumps(payload), headers=headers)
+        r = requests.post(private.WEBHOOK_URL, data=json.dumps(payload), headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError as ex:
         print('Failed to send message: {}'.format(ex))
