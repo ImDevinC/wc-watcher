@@ -214,6 +214,7 @@ def send_event(event):
     headers = {'Content-Type': 'application/json'}
     payload = {'text': event}
     try:
+        print(event.encode('utf-8'))
         r = requests.post(private.WEBHOOK_URL, data=json.dumps(payload), headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError as ex:
