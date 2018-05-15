@@ -4,6 +4,8 @@ import os.path
 from enum import Enum
 import time
 import private
+import asyncio
+from concurrent.futures import ProcessPoolExecutor
 
 WC_COMPETITION = None # 17 for only WC matches
 
@@ -217,20 +219,39 @@ def send_event(event):
     except requests.exceptions.HTTPError as ex:
         print('Failed to send message: {}'.format(ex))
         return
+    except requests.exceptions.ConnectionError as ex:
+        print('Failed to send message: {}'.format(ex))
+        return
 
-def heart_beat(count):
-    count = count + 1
-    if count >= 60:
-        count = 0
-        send_event('Health ping')
-    return count
-
-if __name__ == '__main__':
+def heart_beat():
     count = 0
     while True:
-        if private.DEBUG:
-            count = heart_beat(count)
+        count = count + 1
+        if count >= 2:
+            count = 0
+            send_event('Health ping')
+        asyncio.sleep(60)
+
+def main():
+    while True:
         events = check_for_updates()
         for event in events:
             send_event(event)
-        time.sleep(60)
+        asyncio.sleep(60)
+
+if __name__ == '__main__':
+    executor = ProcessPoolExecutor(2)
+    loop = asyncio.get_event_loop()
+    main_task = asyncio.ensure_future(loop.run_in_executor(executor, main))
+    if private.DEBUG:
+        heart_beat_task = asyncio.ensure_future(loop.run_in_executor(executor, heart_beat))
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if main_task and not main_task.cancelled():
+            main_task.cancel()
+        if heart_beat_task and not heart_beat_task.cancelled():
+            heart_beat_task.cancel()
+        loop.close()
