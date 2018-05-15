@@ -19,6 +19,7 @@ class EventType(Enum):
     RED_CARD = 3
     DOUBLE_YELLOW = 4
     SUBSTITUTION = 5
+    IGNORE = 6
     MATCH_START = 7
     HALF_END = 8
     BLOCKED_SHOT = 12
