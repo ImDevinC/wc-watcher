@@ -218,15 +218,19 @@ def send_event(event):
         print('Failed to send message: {}'.format(ex))
         return
 
+def heart_beat(count):
+    count = count + 1
+    if count >= 60:
+        count = 0
+        send_event('Health ping')
+    return count
+
 if __name__ == '__main__':
     count = 0
     while True:
+        if private.DEBUG:
+            count = heart_beat(count)
         events = check_for_updates()
         for event in events:
             send_event(event)
-        count = count + 1
-        if count >= 60:
-          count = 0
-          if private.DEBUG:
-              send_event('Health ping') 
         time.sleep(60)
