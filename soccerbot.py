@@ -227,7 +227,7 @@ def heart_beat():
     count = 0
     while True:
         count = count + 1
-        if count >= 2:
+        if count >= 60:
             count = 0
             send_event('Health ping')
         asyncio.sleep(60)
