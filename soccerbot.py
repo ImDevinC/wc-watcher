@@ -229,15 +229,16 @@ def heart_beat():
         count = count + 1
         if count >= 60:
             count = 0
+            print('Health ping')
             send_event('Health ping')
-        asyncio.sleep(60)
+        time.sleep(60)
 
 def main():
     while True:
         events = check_for_updates()
         for event in events:
             send_event(event)
-        asyncio.sleep(60)
+        time.sleep(60)
 
 if __name__ == '__main__':
     executor = ProcessPoolExecutor(2)
