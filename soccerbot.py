@@ -44,6 +44,11 @@ class EventType(Enum):
     def has_value(cls, value):
         return any(value == item.value for item in cls)
 
+class Period(Enum):
+    FIRST_PERIOD = 3
+    SECOND_PERIOD = 5
+    PENALTY_SHOOTOUT = 11
+
 def get_current_matches():
     matches = []
     players = {}
@@ -107,6 +112,7 @@ def get_match_events(idCompetition, idSeason, idStage, idMatch):
         new_event['home_goal'] = event['HomeGoals']
         new_event['away_goal'] = event['AwayGoals']
         new_event['sub'] = event['IdSubPlayer']
+        new_event['period'] = event['Period']
         new_event['url'] = match_url
         events[eId] = new_event
     return events
@@ -122,24 +128,43 @@ def build_event(player_list, current_match, event):
         event_message = ':soccer: {} GOOOOAL! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
         extraInfo = True
     elif event['type'] == EventType.YELLOW_CARD.value:
-        event_message = ':yellow_card_new: {} Yellow card'.format(event['time'])
+        event_message = ':yellow_card_new: {} Yellow card.'.format(event['time'])
         extraInfo = True
     elif event['type'] == EventType.RED_CARD.value:
-        event_message = ':red_card_new: {} Red card'.format(event['time'])
+        event_message = ':red_card_new: {} Red card.'.format(event['time'])
         extraInfo = True
     elif event['type'] == EventType.DOUBLE_YELLOW.value:
-        event_message = ':yellow_card_new: :red_card_new: {} Second yellow card'.format(event['time'])
+        event_message = ':yellow_card_new: :red_card_new: {} Second yellow card.'.format(event['time'])
         extraInfo = True
     elif event['type'] == EventType.SUBSTITUTION.value:
-        event_message = ':arrows_counterclockwise: {} Substitution for {}'.format(event['time'], active_team)
+        event_message = ':arrows_counterclockwise: {} Substitution for {}.'.format(event['time'], active_team)
         if player and sub_player:
-            event_message += '\n> {} comes on for {}'.format(sub_player, player)
+            event_message += '\n> {} comes on for {}.'.format(sub_player, player)
     elif event['type'] == EventType.MATCH_START.value:
-        event_message = ':clock12: The match between {} and {} has begun!'.format(current_match['homeTeam'], current_match['awayTeam'])
+        period = None
+        if event['period'] == Period.FIRST_PERIOD.value:
+            event_message = ':clock12: The match between {} and {} has begun!'.format(current_match['homeTeam'], current_match['awayTeam'])
+        elif event['period'] == Period.SECOND_PERIOD.value:
+            event_message = ':clock12: The second half of the match between {} and {} has begun!'.format(current_match['homeTeam'], current_match['awayTeam'])
+        elif event['period'] == Period.PENALTY_SHOOTOUT.value:
+            event_message = ':clock12: The penalty shootout is starting between {} and {}!'.format(current_match['homeTeam'], current_match['awayTeam'])
+        else:
+            event_message = ':clock12: The match between {} and {} is starting again!'.format(current_match['homeTeam'], current_match['awayTeam'])
     elif event['type'] == EventType.HALF_END.value:
-        event_message = ':clock1230: End of the half. {} *{}:{}* {}'.format(current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        period = None
+        if event['period'] == Period.FIRST_PERIOD.value:
+            period = 'first'
+        elif event['period'] == Period.SECOND_PERIOD.value:
+            period = 'second'
+        elif event['period'] == Period.PENALTY_SHOOTOUT.value:
+            event_message = ':clock1230: The penalty shootout is over.'
+        else:
+            period = 'invalid'
+            event_message = ':clock1230: End of the half. {} *{}:{}* {}.'.format(current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        if period is not None:
+            event_message = ':clock1230: End of the {} half. {} *{}:{}* {}.'.format(period, current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
     elif event['type'] == EventType.MATCH_END.value:
-        event_message = ':clock12: The match between {} and {} has ended. {} *{}:{}* {}'.format(current_match['homeTeam'], current_match['awayTeam'],
+        event_message = ':clock12: The match between {} and {} has ended. {} *{}:{}* {}.'.format(current_match['homeTeam'], current_match['awayTeam'],
         current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
     elif event['type'] == EventType.OWN_GOAL.value:
         event_message = ':soccer: {} Own Goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
@@ -210,12 +235,12 @@ def check_for_updates():
     save_matches(match_list)
     return events
 
-def send_event(event):
+def send_event(event, url=private.WEBHOOK_URL):
     headers = {'Content-Type': 'application/json'}
     payload = {'text': event}
     try:
         print(event.encode('utf-8'))
-        r = requests.post(private.WEBHOOK_URL, data=json.dumps(payload), headers=headers)
+        r = requests.post(url, data=json.dumps(payload), headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError as ex:
         print('Failed to send message: {}'.format(ex))
@@ -226,12 +251,13 @@ def send_event(event):
 
 def heart_beat():
     count = 0
+    send_event('Coming up', url=private.DEBUG_WEBHOOK)
     while True:
         count = count + 1
         if count >= 60:
             count = 0
             print('Health ping')
-            send_event('Health ping')
+            send_event('Health ping', url=private.DEBUG_WEBHOOK)
         time.sleep(60)
 
 def main():
@@ -245,7 +271,7 @@ if __name__ == '__main__':
     executor = ProcessPoolExecutor(2)
     loop = asyncio.get_event_loop()
     main_task = asyncio.ensure_future(loop.run_in_executor(executor, main))
-    if private.DEBUG:
+    if private.DEBUG and private.DEBUG_WEBHOOK is not '':
         heart_beat_task = asyncio.ensure_future(loop.run_in_executor(executor, heart_beat))
     try:
         loop.run_forever()
