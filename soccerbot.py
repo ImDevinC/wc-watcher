@@ -239,7 +239,6 @@ def send_event(event, url=private.WEBHOOK_URL):
     headers = {'Content-Type': 'application/json'}
     payload = {'text': event}
     try:
-        print(event.encode('utf-8'))
         r = requests.post(url, data=json.dumps(payload), headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError as ex:
@@ -256,7 +255,6 @@ def heart_beat():
         count = count + 1
         if count >= 60:
             count = 0
-            print('Health ping')
             send_event('Health ping', url=private.DEBUG_WEBHOOK)
         time.sleep(60)
 
