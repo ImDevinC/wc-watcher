@@ -113,6 +113,8 @@ def get_match_events(idCompetition, idSeason, idStage, idMatch):
         new_event['away_goal'] = event['AwayGoals']
         new_event['sub'] = event['IdSubPlayer']
         new_event['period'] = event['Period']
+        new_event['home_pgoals'] = event['HomePenaltyGoals']
+        new_event['away_pgoals'] = event['AwayPenaltyGoals']
         new_event['url'] = match_url
         events[eId] = new_event
     return events
@@ -170,10 +172,16 @@ def build_event(player_list, current_match, event):
         event_message = ':soccer: {} Own Goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
         extraInfo = True
     elif event['type'] == EventType.PENALTY_GOAL.value:
-        event_message = ':soccer: {} Penalty goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+        if event['period'] == Period.PENALTY_SHOOTOUT.value:
+            event_message = ':soccer: Penalty goal! {} *{} ({}):{} (){}* {}'.format(current_match['homeTeam'], event['home_goal'], event['home_pgoals'], event['away_goal'], event['away_pgoals'], current_match['awayTeam']))
+        else:
+            event_message = ':soccer: {} Penalty goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
         extraInfo = True
     elif event['type'] == EventType.PENALTY_MISSED.value:
-        event_message = ':no_entry_sign: {} Penalty missed!'.format(event['time'])
+        if event['period'] == Period.PENALTY_SHOOTOUT.value:
+            event_message = ':no_entry_sign: Penalty missed! {} *{} ({}):{} (){}* {}'.format(current_match['homeTeam'], event['home_goal'], event['home_pgoals'], event['away_goal'], event['away_pgoals'], current_match['awayTeam']))
+        else:
+            event_message = ':no_entry_sign: {} Penalty missed!'.format(event['time'])
         extraInfo = True
     elif EventType.has_value(event['type']):
         event_message = None
