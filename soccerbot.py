@@ -34,6 +34,7 @@ class EventType(Enum):
     UNKNOWN_2 = 23
     MATCH_END = 26
     CROSSBAR = 32
+    CROSSBAR_2 = 33
     OWN_GOAL = 34
     FREE_KICK_GOAL = 39
     PENALTY_GOAL = 41
