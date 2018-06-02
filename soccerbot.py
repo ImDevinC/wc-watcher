@@ -7,7 +7,7 @@ import private
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
 
-WC_COMPETITION = None # 17 for only WC matches
+WC_COMPETITION = 17 # 17 for only WC matches
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
 NOW_URL = '/live/football/now'
