@@ -7,7 +7,7 @@ import private
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
 
-WC_COMPETITION = 17 # 17 for only WC matches
+WC_COMPETITION = '17' # 17 for only WC matches
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
 NOW_URL = '/live/football/now'
@@ -278,6 +278,7 @@ if __name__ == '__main__':
     executor = ProcessPoolExecutor(2)
     loop = asyncio.get_event_loop()
     main_task = asyncio.ensure_future(loop.run_in_executor(executor, main))
+    heart_beat_task = None
     if private.DEBUG and private.DEBUG_WEBHOOK is not '':
         heart_beat_task = asyncio.ensure_future(loop.run_in_executor(executor, heart_beat))
     try:
