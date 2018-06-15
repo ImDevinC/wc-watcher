@@ -122,6 +122,7 @@ def get_match_events(idCompetition, idSeason, idStage, idMatch):
     return events
 
 def build_event(player_list, current_match, event):
+    is_debug = False
     event_message = ''
     player = player_list.get(event['player'])
     sub_player = player_list.get(event['sub'])
@@ -189,6 +190,7 @@ def build_event(player_list, current_match, event):
         event_message = None
     elif private.DEBUG:
         event_message = 'Missing event information for {} vs {}: Event {}\n{}'.format(current_match['homeTeam'], current_match['awayTeam'], event['type'], event['url'])
+        is_debug = True
     else:
         event_message = None
 
@@ -198,7 +200,10 @@ def build_event(player_list, current_match, event):
         elif active_team:
             event_message += '\n> {}'.format(active_team)
 
-    return event_message
+    if event_message:
+        return {'message': event_message, 'debug': is_debug}
+    else:
+        return None
 
 def save_matches(match_list):
     with open('match_list.txt', 'w') as file:
@@ -213,10 +218,12 @@ def load_matches():
     
 
 def check_for_updates():
+    print('Checking for updates')
     events = []
     match_list = load_matches()
     player_list = {}
     live_matches, players = get_current_matches()
+    print('Found {} active matches'.format(len(live_matches)))
     for match in live_matches:
         if not match['idMatch'] in match_list:
             match_list[match['idMatch']] = match
@@ -229,6 +236,7 @@ def check_for_updates():
     for match in match_list:
         current_match = match_list[match]
         event_list = get_match_events(current_match['idCompetition'], current_match['idSeason'], current_match['idStage'], current_match['idMatch'])
+        print('Got {} events from match'.format(len(event_list)))
         for event in event_list:
             if event in current_match['events']:
                 continue # We already reported the event, skip it
@@ -246,9 +254,11 @@ def check_for_updates():
     return events
 
 def send_event(event, url=private.WEBHOOK_URL):
+    print('Sending event')
     headers = {'Content-Type': 'application/json'}
     payload = {'text': event}
     try:
+        print(url, json.dumps(payload))
         r = requests.post(url, data=json.dumps(payload), headers=headers)
         r.raise_for_status()
     except requests.exceptions.HTTPError as ex:
@@ -272,7 +282,12 @@ def main():
     while True:
         events = check_for_updates()
         for event in events:
-            send_event(event)
+            url = private.WEBHOOK_URL
+            if event['debug'] == True and private.DEBUG and private.DEBUG_WEBHOOK is not '':
+                print('Debug event')
+                url = private.DEBUG_WEBHOOK
+            print('{}'.format(event['message']))
+            send_event(event['message'], url)
         time.sleep(60)
 
 if __name__ == '__main__':
