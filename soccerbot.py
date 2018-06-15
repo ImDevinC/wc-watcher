@@ -63,7 +63,7 @@ def get_current_matches():
 
     for match in r.json()['Results']:
         id_competition = match['IdCompetition']
-        if WC_COMPETITION and WC_COMPETITION != id_competition:
+        if WC_COMPETITION and WC_COMPETITION != int(id_competition):
             continue
         id_season = match['IdSeason']
         id_stage = match['IdStage']
