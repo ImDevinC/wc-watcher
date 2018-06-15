@@ -30,16 +30,19 @@ class EventType(Enum):
     CORNER_KICK = 16
     BLOCKED_SHOT_2 = 17
     FOUL = 18
+    UNKNOWN_5 = 20
     UNKNOWN_3 = 22
     UNKNOWN_2 = 23
     UNKNOWN_4 = 24
     MATCH_END = 26
+    UNKNOWN_8 = 27
     CROSSBAR = 32
     CROSSBAR_2 = 33
     OWN_GOAL = 34
     FREE_KICK_GOAL = 39
     PENALTY_GOAL = 41
     PENALTY_MISSED = 60
+    UNKNOWN_6 = 71
     UNKNOWN = 9999
 
     @classmethod
