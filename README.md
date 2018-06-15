@@ -17,3 +17,11 @@ This bot uses the undocumented FIFA API's to report on World Cup matches. It wil
     + You can also set `WC_COMPETITION = None` in `soccerbot.py` to get all current FIFA matches and see what the output looks like. Just make sure to change it back to `WC_COMPETITION = 17` for world cup only
 1. Use `pip install -r requirements.txt`
 1. Run `python soccerbot.py`
+
+### Card emoji
+1. Go to https://slack.com/customize/emoji
+1. Enter `yellow_card_new` as name
+1. Upload `hand_yellow_card.png`
+1. Save emoji
+
+Repeat for `red_card_new` and `hand_red_card.png`
