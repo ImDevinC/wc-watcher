@@ -247,7 +247,12 @@ def check_for_updates():
 
 def send_event(event, url=private.WEBHOOK_URL):
     headers = {'Content-Type': 'application/json'}
-    payload = {'text': event}
+    payload = {
+        'username': private.BOT_NAME,
+        'icon_emoji': private.ICON_EMOJI,
+        'channel': private.CHANNEL,
+        'text': event
+    }
     try:
         r = requests.post(url, data=json.dumps(payload), headers=headers)
         r.raise_for_status()
