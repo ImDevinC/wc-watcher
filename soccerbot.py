@@ -245,16 +245,19 @@ def check_for_updates():
     save_matches(match_list)
     return events
 
-def send_event(event, url=private.WEBHOOK_URL):
+def send_event(event, url=private.WEBHOOK_URL, channel=''):
     headers = {'Content-Type': 'application/json'}
     payload = { 'text': event }
     
+    if channel is not '':
+       payload['channel'] = channel
+    elif private.CHANNEL is not '':
+       payload['channel'] = private.CHANNEL
+
     if private.BOT_NAME is not '':
        payload['username'] = private.BOT_NAME
     if private.ICON_EMOJI is not '':
        payload['icon_emoji'] = private.ICON_EMOJI
-    if private.CHANNEL is not '':
-       payload['channel'] = private.CHANNEL
       
     try:
         r = requests.post(url, data=json.dumps(payload), headers=headers)
@@ -268,12 +271,12 @@ def send_event(event, url=private.WEBHOOK_URL):
 
 def heart_beat():
     count = 0
-    send_event('Coming up', url=private.DEBUG_WEBHOOK)
+    send_event('Coming up', url=private.DEBUG_WEBHOOK, channel=private.DEBUG_CHANNEL)
     while True:
         count = count + 1
         if count >= 60:
             count = 0
-            send_event('Health ping', url=private.DEBUG_WEBHOOK)
+            send_event('Health ping', url=private.DEBUG_WEBHOOK, channel=private.DEBUG_CHANNEL)
         time.sleep(60)
 
 def main():
