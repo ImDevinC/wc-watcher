@@ -147,7 +147,7 @@ def build_event(player_list, current_match, event):
     elif event['type'] == EventType.SUBSTITUTION.value:
         event_message = ':arrows_counterclockwise: {} Substitution for {}.'.format(event['time'], active_team)
         if player and sub_player:
-            event_message += '\n> {} comes on for {}.'.format(sub_player, player)
+            event_message += '\n> {} comes on for {}.'.format(player, sub_player)
     elif event['type'] == EventType.MATCH_START.value:
         period = None
         if event['period'] == Period.FIRST_PERIOD.value:
