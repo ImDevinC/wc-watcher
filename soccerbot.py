@@ -17,6 +17,7 @@ TEAM_URL = ''
 
 class EventType(Enum):
     GOAL_SCORED = 0
+    UNKNOWN_11 = 1
     YELLOW_CARD = 2
     RED_CARD = 3
     DOUBLE_YELLOW = 4
@@ -26,16 +27,19 @@ class EventType(Enum):
     HALF_END = 8
     BLOCKED_SHOT = 12
     FOUL_UNKNOWN = 14
+    UNKNOWN_10 = 13
     OFFSIDE = 15
     CORNER_KICK = 16
     BLOCKED_SHOT_2 = 17
     FOUL = 18
+    UNKNOWN_7 = 19
     UNKNOWN_5 = 20
     UNKNOWN_3 = 22
     UNKNOWN_2 = 23
     UNKNOWN_4 = 24
     MATCH_END = 26
     UNKNOWN_8 = 27
+    UNKNOWN_9 = 30
     CROSSBAR = 32
     CROSSBAR_2 = 33
     OWN_GOAL = 34
@@ -43,6 +47,7 @@ class EventType(Enum):
     PENALTY_GOAL = 41
     PENALTY_MISSED = 60
     UNKNOWN_6 = 71
+    VAR_PENALTY = 72
     UNKNOWN = 9999
 
     @classmethod
