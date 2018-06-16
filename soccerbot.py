@@ -46,6 +46,7 @@ class EventType(Enum):
     HAND_BALL = 37
     FREE_KICK_GOAL = 39
     PENALTY_GOAL = 41
+    UNKNOWN_12 = 51
     PENALTY_MISSED = 60
     UNKNOWN_6 = 71
     VAR_PENALTY = 72
