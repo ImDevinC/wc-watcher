@@ -43,6 +43,7 @@ class EventType(Enum):
     CROSSBAR = 32
     CROSSBAR_2 = 33
     OWN_GOAL = 34
+    HAND_BALL = 37
     FREE_KICK_GOAL = 39
     PENALTY_GOAL = 41
     PENALTY_MISSED = 60
