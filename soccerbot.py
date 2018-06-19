@@ -39,6 +39,7 @@ class EventType(Enum):
     UNKNOWN_4 = 24
     MATCH_END = 26
     UNKNOWN_8 = 27
+    UNKNOWN_13 = 29
     UNKNOWN_9 = 30
     CROSSBAR = 32
     CROSSBAR_2 = 33
