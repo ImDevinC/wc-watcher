@@ -50,6 +50,7 @@ class EventType(Enum):
     FREE_KICK_CROSSBAR = 44
     UNKNOWN_12 = 51
     PENALTY_MISSED = 60
+    PENALTY_MISSED_2 = 65
     UNKNOWN_6 = 71
     VAR_PENALTY = 72
     UNKNOWN = 9999
@@ -192,7 +193,7 @@ def build_event(player_list, current_match, event):
         else:
             event_message = ':soccer: {} Penalty goal! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
         extraInfo = True
-    elif event['type'] == EventType.PENALTY_MISSED.value:
+    elif event['type'] == EventType.PENALTY_MISSED.value or event['type'] == EventType.PENALTY_MISSED_2.value:
         if event['period'] == Period.PENALTY_SHOOTOUT.value:
             event_message = ':no_entry_sign: Penalty missed! {} *{} ({}):{} (){}* {}'.format(current_match['homeTeam'], event['home_goal'], event['home_pgoals'], event['away_goal'], event['away_pgoals'], current_match['awayTeam'])
         else:
