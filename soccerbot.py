@@ -92,7 +92,7 @@ def get_current_matches():
             continue
 
         matches.append({'idCompetition': id_competition, 'idSeason': id_season, 'idStage': id_stage, 'idMatch': id_match, 'homeTeamId': home_team_id, 
-        'homeTeam': home_team_name, 'awayTeamId': away_team_id, 'awayTeam': away_team_name, 'events': {}})
+        'homeTeam': home_team_name, 'awayTeamId': away_team_id, 'awayTeam': away_team_name, 'events': []})
 
         for player in match['HomeTeam']['Players']:
             player_id = player['IdPlayer']
@@ -141,7 +141,8 @@ def build_event(player_list, current_match, event):
     sub_player = player_list.get(event['sub'])
     active_team = current_match['homeTeam'] if event['team'] == current_match['homeTeamId'] else current_match['awayTeam']
     extraInfo = False
-    if (event['type'] == EventType.GOAL_SCORED.value or event['type'] == EventType.FREE_KICK_GOAL.value):
+    if (event['type'] == EventType.GOAL_SCORED.value or event['type'] == EventType.FREE_KICK_GOAL.value
+        or event['type'] == EventType.FREE_KICK_GOAL.value):
         event_message = ':soccer: {} GOOOOAL! {} *{}:{}* {}'.format(event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
         extraInfo = True
     elif event['type'] == EventType.YELLOW_CARD.value:
@@ -248,10 +249,10 @@ def check_for_updates():
         current_match = match_list[match]
         event_list = get_match_events(current_match['idCompetition'], current_match['idSeason'], current_match['idStage'], current_match['idMatch'])
         for event in event_list:
-            if event in current_match['events'] and event_list[event]['type'] == current_match['events'].get(event):
+            if event in current_match['events']:
                 continue # We already reported the event, skip it
             event_notification = build_event(player_list, current_match, event_list[event])
-            current_match['events'][event] = event_list[event]['type']
+            current_match['events'].append(event)
             if not event_notification is None:
                 events.append(event_notification)
             if event_list[event]['type'] == EventType.MATCH_END.value:
@@ -305,7 +306,7 @@ def main():
             if event['debug'] == True and private.DEBUG and private.DEBUG_WEBHOOK is not '':
                 url = private.DEBUG_WEBHOOK
             send_event(event['message'], url)
-        time.sleep(30)
+        time.sleep(60)
 
 if __name__ == '__main__':
     executor = ProcessPoolExecutor(2)
