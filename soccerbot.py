@@ -33,7 +33,7 @@ FLAGS = {
     'ISL': ':flag-is:',
     'IRN': ':flag-ir:',
     'JPN': ':flag-jp:',
-    'KOR': ':flag-sk:',
+    'KOR': ':flag-kr:',
     'MEX': ':flag-mx:',
     'MAR': ':flag-ma:',
     'NGA': ':flag-ng:',
