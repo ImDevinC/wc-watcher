@@ -6,14 +6,51 @@ import time
 import private
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime, timedelta
 
 WC_COMPETITION = '17' # 17 for only WC matches
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
 NOW_URL = '/live/football/now'
 MATCH_URL = '/timelines/{}/{}/{}/{}?language=en-US' # IdCompetition/IdSeason/IdStage/IdMatch
+DAILY_URL = '/calendar/matches?from={}Z&to={}Z&idCompetition=17&language=en-US'
 PLAYER_URL = ''
 TEAM_URL = ''
+
+FLAGS = {
+    'ARG': ':flag-ar:',
+    'AUS': ':flag-au:',
+    'BEL': ':flag-be:',
+    'BRA': ':flag-br:',
+    'COL': ':flag-co:',
+    'CRC': ':flag-cr:',
+    'CRO': ':flag-hr:',
+    'DEN': ':flag-dk:',
+    'EGY': ':flag-eg:',
+    'ENG': ':flag-england:',
+    'FRA': ':flag-fr:',
+    'GER': ':flag-de:',
+    'ISL': ':flag-is:',
+    'IRN': ':flag-ir:',
+    'JPN': ':flag-jp:',
+    'KOR': ':flag-sk:',
+    'MEX': ':flag-mx:',
+    'MAR': ':flag-ma:',
+    'NGA': ':flag-ng:',
+    'PAN': ':flag-pa:',
+    'PER': ':flag-pe:',
+    'POL': ':flag-pl:',
+    'POR': ':flag-pt:',
+    'RUS': ':flag-ru:',
+    'KSA': ':flag-sa:',
+    'SEN': ':flag-sn:',
+    'SRB': ':flag-rs:',
+    'ESP': ':flag-es:',
+    'SWE': ':flag-se:',
+    'SUI': ':flag-ch:',
+    'TUN': ':flag-tn:',
+    'URU': ':flag-uy:'
+}
 
 class EventType(Enum):
     GOAL_SCORED = 0
@@ -63,6 +100,36 @@ class Period(Enum):
     FIRST_PERIOD = 3
     SECOND_PERIOD = 5
     PENALTY_SHOOTOUT = 11
+
+def get_daily_matches():
+    daily_matches = ''
+    now = datetime.utcnow()
+    start_time = now.strftime("%Y-%m-%dT%H:00:00")
+    now = now + timedelta(days=1)
+    end_time = now.strftime("%Y-%m-%dT%H:00:00")
+    try:
+        daily_url = FIFA_URL + DAILY_URL.format(start_time, end_time)
+        r = requests.get(daily_url)
+        r.raise_for_status()
+    except request.exceptions.HTTPError as ex:
+        print('Failed to get list of daily matches.\n{}'.format(ex))
+        return daily_matches
+
+    if len(r.json()['Results']) > 0:
+        daily_matches = '*Todays Matches:*\n'
+    for match in r.json()['Results']:
+        home_team = match['Home']
+        home_team_id = home_team['IdCountry']
+        home_team_flag = ''
+        if home_team_id in FLAGS.keys():
+            home_team_flag = FLAGS[home_team_id]
+        away_team = match['Away']
+        away_team_flag = ''
+        away_team_id = away_team['IdCountry']
+        if away_team_id in FLAGS.keys():
+            away_team_flag = FLAGS[away_team_id]
+        daily_matches += '{} {} vs {} {}\n'.format(home_team_flag, home_team['TeamName'][0]['Description'], away_team['TeamName'][0]['Description'], away_team_flag)
+    return daily_matches
 
 def get_current_matches():
     matches = []
@@ -299,7 +366,13 @@ def heart_beat():
         time.sleep(60)
 
 def main():
+    last_sent_daily = (datetime.now() - timedelta(days=1)).timetuple().tm_yday
     while True:
+        if (last_sent_daily < datetime.now().timetuple().tm_yday):
+            last_sent_daily = datetime.now().timetuple().tm_yday
+            daily_matches = get_daily_matches()
+            if daily_matches is not '':
+                send_event(daily_matches)
         events = check_for_updates()
         for event in events:
             url = private.WEBHOOK_URL
