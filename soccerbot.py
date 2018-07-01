@@ -272,7 +272,7 @@ def build_event(player_list, current_match, event):
         extraInfo = True
     elif event['type'] == EventType.PENALTY_MISSED.value or event['type'] == EventType.PENALTY_MISSED_2.value:
         if event['period'] == Period.PENALTY_SHOOTOUT.value:
-            event_message = ':no_entry_sign: Penalty missed! {} *{} ({}):{} (){}* {}'.format(current_match['homeTeam'], event['home_goal'], event['home_pgoals'], event['away_goal'], event['away_pgoals'], current_match['awayTeam'])
+            event_message = ':no_entry_sign: Penalty missed! {} *{} ({}):{} ({})* {}'.format(current_match['homeTeam'], event['home_goal'], event['home_pgoals'], event['away_goal'], event['away_pgoals'], current_match['awayTeam'])
         else:
             event_message = ':no_entry_sign: {} Penalty missed!'.format(event['time'])
         extraInfo = True
