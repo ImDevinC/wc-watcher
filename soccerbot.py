@@ -99,6 +99,8 @@ class EventType(Enum):
 class Period(Enum):
     FIRST_PERIOD = 3
     SECOND_PERIOD = 5
+    FIRST_EXTRA = 7
+    SECOND_EXTRA = 9
     PENALTY_SHOOTOUT = 11
 
 def get_daily_matches():
@@ -233,6 +235,10 @@ def build_event(player_list, current_match, event):
             event_message = ':clock12: The second half of the match between {} and {} has begun!'.format(current_match['homeTeam'], current_match['awayTeam'])
         elif event['period'] == Period.PENALTY_SHOOTOUT.value:
             event_message = ':clock12: The penalty shootout is starting between {} and {}!'.format(current_match['homeTeam'], current_match['awayTeam'])
+        elif event['period'] == Period.FIRST_EXTRA.value:
+            event_message = ':clock12: The first half of extra time is starting between {} and {}!'.format(current_match['homeTeam'], current_match['awayTeam'])
+        elif event['period'] == Period.SECOND_EXTRA.value:
+            event_message = ':clock12: The second half of extra time is starting between {} and {}!'.format(current_match['homeTeam'], current_match['awayTeam'])
         else:
             event_message = ':clock12: The match between {} and {} is starting again!'.format(current_match['homeTeam'], current_match['awayTeam'])
     elif event['type'] == EventType.HALF_END.value:
@@ -243,6 +249,10 @@ def build_event(player_list, current_match, event):
             period = 'second'
         elif event['period'] == Period.PENALTY_SHOOTOUT.value:
             event_message = ':clock1230: The penalty shootout is over.'
+        elif event['period'] == Period.FIRST_EXTRA.value:
+            period = 'first extra'
+        elif event['period'] == Period.SECOND_EXTRA.value:
+            period = 'second extra'
         else:
             period = 'invalid'
             event_message = ':clock1230: End of the half. {} *{}:{}* {}.'.format(current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
@@ -262,7 +272,7 @@ def build_event(player_list, current_match, event):
         extraInfo = True
     elif event['type'] == EventType.PENALTY_MISSED.value or event['type'] == EventType.PENALTY_MISSED_2.value:
         if event['period'] == Period.PENALTY_SHOOTOUT.value:
-            event_message = ':no_entry_sign: Penalty missed! {} *{} ({}):{} (){}* {}'.format(current_match['homeTeam'], event['home_goal'], event['home_pgoals'], event['away_goal'], event['away_pgoals'], current_match['awayTeam'])
+            event_message = ':no_entry_sign: Penalty missed! {} *{} ({}):{} ({})* {}'.format(current_match['homeTeam'], event['home_goal'], event['home_pgoals'], event['away_goal'], event['away_pgoals'], current_match['awayTeam'])
         else:
             event_message = ':no_entry_sign: {} Penalty missed!'.format(event['time'])
         extraInfo = True
@@ -344,7 +354,6 @@ def send_event(event, url=private.WEBHOOK_URL, channel=''):
        payload['username'] = private.BOT_NAME
     if  hasattr(private, 'ICON_EMOJI') and private.ICON_EMOJI is not '':
        payload['icon_emoji'] = private.ICON_EMOJI
-      
     try:
         r = requests.post(url, data=json.dumps(payload), headers=headers)
         r.raise_for_status()
