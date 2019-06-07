@@ -8,12 +8,12 @@ import asyncio
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
 
-WC_COMPETITION = '17' # 17 for only WC matches
+WC_COMPETITION = '103' # 17 for only WC matches
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
 NOW_URL = '/live/football/now'
 MATCH_URL = '/timelines/{}/{}/{}/{}?language=en-US' # IdCompetition/IdSeason/IdStage/IdMatch
-DAILY_URL = '/calendar/matches?from={}Z&to={}Z&idCompetition=17&language=en-US'
+DAILY_URL = '/calendar/matches?from={}Z&to={}Z&idCompetition={}&language=en-US'
 PLAYER_URL = ''
 TEAM_URL = ''
 
@@ -110,7 +110,7 @@ def get_daily_matches():
     now = now + timedelta(days=1)
     end_time = now.strftime("%Y-%m-%dT%H:00:00")
     try:
-        daily_url = FIFA_URL + DAILY_URL.format(start_time, end_time)
+        daily_url = FIFA_URL + DAILY_URL.format(start_time, end_time, WC_COMPETITION)
         r = requests.get(daily_url)
         r.raise_for_status()
     except request.exceptions.HTTPError as ex:
