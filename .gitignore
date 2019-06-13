@@ -2,6 +2,8 @@ venv/
 match_list.txt
 private.py
 nohup.out
+.terraform/
+deployment.zip
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

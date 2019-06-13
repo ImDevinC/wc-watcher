@@ -7,17 +7,17 @@ This bot uses the undocumented FIFA API's to report on World Cup matches. It wil
 + Penalty kicks missed/scored
 
 ### Sample
-[![sample](https://github.com/ImDevinC/wc-watcher/raw/master/ss.png)](#sample)
+[![sample](https://github.com/ImDevinC/wc-watcher/raw/master/assets/ss.png)](#sample)
 
 ### Usage
 1. Setup a new Slack App (https://api.slack.com/apps) with Webhook permission
-1. Copy `private.py.config` to `private.py`
-1. In `private.py`, change `WEBHOOK_URL` to point to your Slack webhook
-    + If you want to see debug information, which currently pings a heartbeat every hour, also fill in the `DEBUG_WEBHOOK` url with a Slack webhook and set `DEBUG = True`
-    + You can also set `WC_COMPETITION = None` in `soccerbot.py` to get all current FIFA matches and see what the output looks like. Just make sure to change it back to `WC_COMPETITION = 17` for world cup only
-1. In `private.py`, change `CHANNEL` to the desired channel in your Slack space
-1. Use `pip install -r requirements.txt`
-1. Run `python soccerbot.py`
+1. Run `build.sh` in the root to generate the necessary zip file for the lambda
+1. In `terraform/variables.tf`, change the values under the **Required Variables** section as well as any other variables you may need.
+1. In the `terraform` subdirectory, run `terraform apply` to create all the necessary resources
+    + Lambda
+    + IAM Roles
+    + Dynamodb table (*this does have a small monthly cost associated with it*)
+    + Cloudwatch rules
 
 ### Card emoji
 1. Go to https://slack.com/customize/emoji
