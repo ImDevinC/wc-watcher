@@ -395,16 +395,65 @@ def check_for_existing_events(match, event_list):
     return event_list
 
 
+def get_missing_matches(live_matches):
+    return_matches = []
+    client = boto3.client('dynamodb')
+    query_response = client.scan(
+        TableName=DYNAMO_TABLE_NAME,
+        Select='SPECIFIC_ATTRIBUTES',
+        ProjectionExpression='match_id, competition, season, stage'
+    )
+    items = query_response.get('Items')
+    return_matches = [
+        {'idMatch': m['match_id']['N'], 'idCompetition': m['competition']
+            ['N'], 'idSeason': m['season']['N'], 'idStage': m['stage']['N']}
+        for m in items if not m['match_id']['N'] in live_matches]
+    return_matches = list(dict.fromkeys(return_matches))
+    return return_matches
+
+
+def delete_match_events(match_id):
+    client = boto3.client('dynamodb')
+    query_response = client.query(
+        TableName=DYNAMO_TABLE_NAME,
+        ExpressionAttributeValues={
+            ':match_id': {
+                'N': match_id
+            }
+        },
+        KeyConditionExpression='match_id = :match_id'
+    )
+    items = query_response.get('Items')
+    delete_queue = []
+    for item in items:
+        delete_queue.append({
+            'DeleteRequest': {
+                'Item': {
+                    'match_id': {'N': match_id},
+                    'event_id': {'N': item['event_id']['N']}
+                }
+            }
+        })
+    while delete_queue:
+        submissions = delete_queue[0:25]
+        client.batch_write_item(RequestItems={DYNAMO_TABLE_NAME: submissions})
+        delete_queue = delete_queue[len(submissions):]
+
+
 def check_for_updates():
     live_matches, players = get_current_matches()
+    existing_match_ids = [m['idMatch'] for m in live_matches]
+    missing_matches = get_missing_matches(existing_match_ids)
+    live_matches.extend(missing_matches)
 
     player_list = {}
     for player in players:
         if not player in player_list:
             player_list[player] = players[player]
 
-    save_events = {}
-    events = []
+    save_events = []
+    return_events = []
+    done_matches = []
     for match in live_matches:
         save_events[match['idMatch']] = []
         current_match = [
@@ -413,14 +462,21 @@ def check_for_updates():
             match['idCompetition'], match['idSeason'], match['idStage'], match['idMatch'])
         event_list = check_for_existing_events(match['idMatch'], event_list)
         for event in event_list:
-            save_events[match['idMatch']].append(event)
             event_notification = build_event(
                 player_list, current_match, event_list[event])
             if not event_notification is None:
-                events.append(event_notification)
+                return_events.append(event_notification)
+            if event_list[event]['type'] == EventType.MATCH_END.value:
+                done_matches.append(match)
+            else:
+                save_events.append(
+                    {event, match['idMatch'], match['idCompetition'], match['idSeason'], match['idStage']})
+
+    for match in done_matches:
+        delete_match_events(match['idMatch'])
 
     save_matches(save_events)
-    return events
+    return return_events
 
 
 def send_event(event):

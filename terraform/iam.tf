@@ -44,9 +44,8 @@ data "aws_iam_policy_document" "main" {
 
     actions = [
       "dynamodb:BatchWriteItem",
-      "dynamodb:PutItem",
-      "dynamodb:GetItem",
       "dynamodb:Query",
+      "dynamodb:Scan",
     ]
 
     resources = ["${aws_dynamodb_table.main.arn}"]
