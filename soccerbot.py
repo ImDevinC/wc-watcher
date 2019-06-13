@@ -22,6 +22,7 @@ FLAGS = {
     'AUS': ':flag-au:',
     'BEL': ':flag-be:',
     'BRA': ':flag-br:',
+    'CHN': ':flag-cn:',
     'COL': ':flag-co:',
     'CRC': ':flag-cr:',
     'CRO': ':flag-hr:',
@@ -49,7 +50,8 @@ FLAGS = {
     'SWE': ':flag-se:',
     'SUI': ':flag-ch:',
     'TUN': ':flag-tn:',
-    'URU': ':flag-uy:'
+    'URU': ':flag-uy:',
+    'ZAF': ':flag-za:'
 }
 
 class EventType(Enum):
