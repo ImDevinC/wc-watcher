@@ -359,7 +359,6 @@ def build_event(player_list, current_match, event):
 def save_matches(event_list):
     items = []
     for event in event_list:
-        logging.info('EVENT: %s', event)
         items.append({
             'PutRequest': {
                 'Item': {
@@ -435,6 +434,7 @@ def delete_match_events(match_id):
     )
     items = query_response.get('Items')
     delete_queue = []
+    logging.info('Found %d items', len(items))
     for item in items:
         delete_queue.append({
             'DeleteRequest': {
@@ -444,6 +444,7 @@ def delete_match_events(match_id):
                 }
             }
         })
+
     while delete_queue:
         submissions = delete_queue[0:25]
         client.batch_write_item(RequestItems={DYNAMO_TABLE_NAME: submissions})
@@ -476,8 +477,10 @@ def check_for_updates():
             if not event_notification is None:
                 return_events.append(event_notification)
             if event_list[event]['type'] == EventType.MATCH_END.value:
-                done_matches.append(match)
-            else:
+                done_matches.append(match['idMatch'])
+                save_events = [
+                    e for e in save_events if e['matchId'] not in done_matches]
+            elif not match['idMatch'] in done_matches:
                 save_events.append({
                     'event': event,
                     'match': match['idMatch'],
@@ -490,8 +493,8 @@ def check_for_updates():
                     'awayTeam': match['awayTeam']
                 })
 
-    for match in done_matches:
-        delete_match_events(match['idMatch'])
+    for match_id in done_matches:
+        delete_match_events(match_id)
 
     save_matches(save_events)
     return return_events
