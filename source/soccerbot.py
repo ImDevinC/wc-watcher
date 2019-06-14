@@ -479,7 +479,7 @@ def check_for_updates():
             if event_list[event]['type'] == EventType.MATCH_END.value:
                 done_matches.append(match['idMatch'])
                 save_events = [
-                    e for e in save_events if e['matchId'] not in done_matches]
+                    e for e in save_events if e['match'] not in done_matches]
             elif not match['idMatch'] in done_matches:
                 save_events.append({
                     'event': event,
