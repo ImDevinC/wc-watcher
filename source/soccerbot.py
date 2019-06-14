@@ -356,18 +356,21 @@ def build_event(player_list, current_match, event):
         return None
 
 
-def save_matches(match_list):
+def save_matches(event_list):
     items = []
-    for match in match_list:
-        for event in match_list[match]:
-            items.append({
-                'PutRequest': {
-                    'Item': {
-                        'match_id': {'N': match},
-                        'event_id': {'N': event}
-                    }
+    for event in event_list:
+        logging.info('EVENT: %s', event)
+        items.append({
+            'PutRequest': {
+                'Item': {
+                    'match_id': {'N': event['match']},
+                    'event_id': {'N': event['event']},
+                    'stage': {'N': event['stage']},
+                    'season': {'N': event['season']},
+                    'competition': {'N': event['competition']}
                 }
-            })
+            }
+        })
 
     client = boto3.client('dynamodb')
     while items:
@@ -455,7 +458,7 @@ def check_for_updates():
     return_events = []
     done_matches = []
     for match in live_matches:
-        save_events[match['idMatch']] = []
+        logging.info(match)
         current_match = [
             m for m in live_matches if m['idMatch'] == match['idMatch']][0]
         event_list = get_match_events(
@@ -470,7 +473,7 @@ def check_for_updates():
                 done_matches.append(match)
             else:
                 save_events.append(
-                    {event, match['idMatch'], match['idCompetition'], match['idSeason'], match['idStage']})
+                    {'event': event, 'match': match['idMatch'], 'competition': match['idCompetition'], 'season': match['idSeason'], 'stage': match['idStage']})
 
     for match in done_matches:
         delete_match_events(match['idMatch'])
