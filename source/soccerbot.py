@@ -350,7 +350,7 @@ def build_event(player_list, current_match, event):
             event_message += '\n> {}'.format(active_team)
 
     if event_message:
-        logging.info('Sending event: %s', event_message)
+        logging.debug('Sending event: %s', event_message)
         return {'message': event_message}
     else:
         return None
@@ -367,7 +367,11 @@ def save_matches(event_list):
                     'event_id': {'N': event['event']},
                     'stage': {'N': event['stage']},
                     'season': {'N': event['season']},
-                    'competition': {'N': event['competition']}
+                    'competition': {'N': event['competition']},
+                    'homeTeamId': {'N': event['homeTeamId']},
+                    'homeTeam': {'S': event['homeTeam']},
+                    'awayTeamId': {'N': event['awayTeamId']},
+                    'awayTeam': {'S': event['awayTeam']}
                 }
             }
         })
@@ -404,14 +408,17 @@ def get_missing_matches(live_matches):
     query_response = client.scan(
         TableName=DYNAMO_TABLE_NAME,
         Select='SPECIFIC_ATTRIBUTES',
-        ProjectionExpression='match_id, competition, season, stage'
+        ProjectionExpression='match_id, competition, season, stage, awayTeam, awayTeamId, homeTeam, homeTeamId'
     )
     items = query_response.get('Items')
     return_matches = [
         {'idMatch': m['match_id']['N'], 'idCompetition': m['competition']
-            ['N'], 'idSeason': m['season']['N'], 'idStage': m['stage']['N']}
+         ['N'], 'idSeason': m['season']['N'], 'idStage': m['stage']['N'],
+         'homeTeamId': m['homeTeamId']['N'], 'homeTeam': m['homeTeam']['S'],
+         'awayTeamId': m['awayTeamId']['N'], 'awayTeam': m['awayTeam']['S']}
         for m in items if not m['match_id']['N'] in live_matches]
-    return_matches = list(dict.fromkeys(return_matches))
+    return_matches = [dict(t)
+                      for t in {tuple(d.items()) for d in return_matches}]
     return return_matches
 
 
@@ -431,7 +438,7 @@ def delete_match_events(match_id):
     for item in items:
         delete_queue.append({
             'DeleteRequest': {
-                'Item': {
+                'Key': {
                     'match_id': {'N': match_id},
                     'event_id': {'N': item['event_id']['N']}
                 }
@@ -458,7 +465,6 @@ def check_for_updates():
     return_events = []
     done_matches = []
     for match in live_matches:
-        logging.info(match)
         current_match = [
             m for m in live_matches if m['idMatch'] == match['idMatch']][0]
         event_list = get_match_events(
@@ -472,8 +478,17 @@ def check_for_updates():
             if event_list[event]['type'] == EventType.MATCH_END.value:
                 done_matches.append(match)
             else:
-                save_events.append(
-                    {'event': event, 'match': match['idMatch'], 'competition': match['idCompetition'], 'season': match['idSeason'], 'stage': match['idStage']})
+                save_events.append({
+                    'event': event,
+                    'match': match['idMatch'],
+                    'competition': match['idCompetition'],
+                    'season': match['idSeason'],
+                    'stage': match['idStage'],
+                    'homeTeamId': match['homeTeamId'],
+                    'homeTeam': match['homeTeam'],
+                    'awayTeamId': match['awayTeamId'],
+                    'awayTeam': match['awayTeam']
+                })
 
     for match in done_matches:
         delete_match_events(match['idMatch'])
