@@ -3,6 +3,7 @@ match_list.txt
 private.py
 nohup.out
 .terraform/
+*.tfvars
 deployment.zip
 # Byte-compiled / optimized / DLL files
 __pycache__/
