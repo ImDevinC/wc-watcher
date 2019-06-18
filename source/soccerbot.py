@@ -1,3 +1,9 @@
+"""Soccerbot scans the FIFA API for daily matches and match events.
+The events are posted to a Slack channel and then stored in a dynamodb
+table to prevent reposting on the next run. Once the match is over,
+the dynamodb table is cleared of all events for that match.
+The list of daily matches can also be retrieved.
+"""
 import os
 import os.path
 import logging
@@ -6,7 +12,6 @@ from enum import Enum
 from datetime import datetime, timedelta
 import requests
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
 
 logging.getLogger().setLevel(os.environ['LOG_LEVEL'].upper())
 
@@ -23,8 +28,6 @@ NOW_URL = '/live/football/now'
 MATCH_URL = '/timelines/{}/{}/{}/{}?language=en-US'
 DAILY_URL = '/calendar/matches?from={}Z&to={}Z&idCompetition={}&language=en-US'
 COMPETITIONS_URL = '/competitions/{}'
-PLAYER_URL = ''
-TEAM_URL = ''
 
 FLAGS = {
     'ARG': ':flag-ar:',
@@ -122,10 +125,23 @@ class EventType(Enum):
 
     @classmethod
     def has_value(cls, value):
+        """Checks if a class contains a value, treats like an ENUM check
+
+        Arguments:
+            value {EventType} -- EventType enum to check
+
+        Returns:
+            {bool} -- Value indicating whether or not the enum exists in the class
+        """
         return any(value == item.value for item in cls)
 
 
 class Period(Enum):
+    """Period Enumerations
+
+    Arguments:
+        Enum {Enum} -- Enumeration for easily referencing the current period of play
+    """
     FIRST_PERIOD = 3
     SECOND_PERIOD = 5
     FIRST_EXTRA = 7
@@ -133,11 +149,19 @@ class Period(Enum):
     PENALTY_SHOOTOUT = 11
 
 
-def get_daily_matches(competition):
+def get_daily_matches(competition_id):
+    """Gets a list of daily matches for the provided competition
+
+    Arguments:
+        competition_id {int} -- The ID of the competition from the FIFA API
+
+    Returns:
+        {string} -- Description of the daily matches for the competition
+    """
     daily_matches = ''
 
     try:
-        match_info_url = FIFA_URL + COMPETITIONS_URL.format(competition)
+        match_info_url = FIFA_URL + COMPETITIONS_URL.format(competition_id)
         response = requests.get(match_info_url)
         response.raise_for_status()
     except requests.exceptions.HTTPError as ex:
@@ -145,7 +169,7 @@ def get_daily_matches(competition):
         return daily_matches
 
     competition_name = ''
-    if len(response.json()['Name']):
+    if response.json() and response.json()['Name']:
         competition_name = response.json()['Name'][0]['Description']
 
     now = datetime.utcnow()
@@ -154,8 +178,7 @@ def get_daily_matches(competition):
     end_time = now.strftime("%Y-%m-%dT%H:00:00")
     try:
         daily_url = FIFA_URL + \
-            DAILY_URL.format(start_time, end_time, competition)
-        logging.info(daily_url)
+            DAILY_URL.format(start_time, end_time, competition_id)
         response = requests.get(daily_url)
         response.raise_for_status()
     except requests.exceptions.HTTPError as ex:
@@ -176,11 +199,19 @@ def get_daily_matches(competition):
         if away_team_id in FLAGS.keys():
             away_team_flag = FLAGS[away_team_id]
         daily_matches += '{} {} vs {} {}\n'.format(
-            home_team_flag, home_team['TeamName'][0]['Description'], away_team['TeamName'][0]['Description'], away_team_flag)
+            home_team_flag, home_team['TeamName'][0]['Description'],
+            away_team['TeamName'][0]['Description'], away_team_flag)
     return daily_matches
 
 
 def get_current_matches():
+    """Gets a list of all matches currently happening.
+    Will filter them based on WC_COMPETITION if any values
+    are present, otherwise it will look at all competitions.
+
+    Returns:
+        [{match}], [{player}] -- [description]
+    """
     matches = []
     players = {}
     headers = {'Content-Type': 'application/json'}
@@ -235,11 +266,22 @@ def get_current_matches():
     return matches, players
 
 
-def get_match_events(idCompetition, idSeason, idStage, idMatch):
+def get_match_events(competition_id, season_id, stage_id, match_id):
+    """Gets the events for the specified match
+
+    Arguments:
+        competition_id {int} -- The competition that the match is in
+        season_id {[type]} -- The season that the match is in
+        stage_id {[type]} -- The stage that the match is in
+        match_id {[type]} -- The match ID
+
+    Returns:
+        [{event}] -- List of events for the match
+    """
     events = {}
     headers = {'Content-Type': 'application/json'}
     match_url = FIFA_URL + \
-        MATCH_URL.format(idCompetition, idSeason, idStage, idMatch)
+        MATCH_URL.format(competition_id, season_id, stage_id, match_id)
     try:
         response = requests.get(match_url, headers=headers)
         response.raise_for_status()
@@ -265,6 +307,16 @@ def get_match_events(idCompetition, idSeason, idStage, idMatch):
 
 
 def build_event(player_list, current_match, event):
+    """Formats the event into a Slack message
+
+    Arguments:
+        player_list [{player}] -- List of player info
+        current_match {match} -- Match information
+        event {event} -- Event information
+
+    Returns:
+        {string} -- Slack message
+    """
     event_message = ''
     player = player_list.get(event['player'])
     sub_player = player_list.get(event['sub'])
@@ -274,7 +326,8 @@ def build_event(player_list, current_match, event):
             or event['type'] == EventType.FREE_KICK_GOAL.value
             or event['type'] == EventType.FREE_KICK_GOAL.value):
         event_message = ':soccer: {} GOOOOAL! {} *{}:{}* {}'.format(
-            event['time'], current_match['homeTeam'], event['home_goal'], event['away_goal'], current_match['awayTeam'])
+            event['time'], current_match['homeTeam'], event['home_goal'],
+            event['away_goal'], current_match['awayTeam'])
         extra_info = True
     elif event['type'] == EventType.YELLOW_CARD.value:
         event_message = ':yellow_card_new: {} Yellow card.'.format(
@@ -369,11 +422,16 @@ def build_event(player_list, current_match, event):
     if event_message:
         logging.debug('Sending event: %s', event_message)
         return {'message': event_message}
-    else:
-        return None
+
+    return None
 
 
 def save_matches(event_list):
+    """Saves the event information to dynamodb
+
+    Arguments:
+        event_list [{event_info}] -- List of events to save
+    """
     items = []
     for event in event_list:
         items.append({
@@ -400,6 +458,17 @@ def save_matches(event_list):
 
 
 def check_for_existing_events(match, event_list):
+    """Gets a list of existing events from dynamodb for the specified match.
+    Will filter out duplicate events from the input list and only return
+    new events.
+
+    Arguments:
+        match {match} -- Match information
+        event_list {event} -- Event information
+
+    Returns:
+        [{event_list}] -- List of new events
+    """
     client = boto3.client('dynamodb')
     query_response = client.query(
         TableName=DYNAMO_TABLE_NAME,
@@ -419,6 +488,15 @@ def check_for_existing_events(match, event_list):
 
 
 def get_missing_matches(live_matches):
+    """Finds a list of matches in dynamodb that are not listed
+    in the provided list of matches
+
+    Arguments:
+        live_matches [{int}] -- A list of match IDs
+
+    Returns:
+        [{match}] -- List of missing matches
+    """
     return_matches = []
     client = boto3.client('dynamodb')
     query_response = client.scan(
@@ -439,6 +517,11 @@ def get_missing_matches(live_matches):
 
 
 def delete_match_events(match_id):
+    """Deletes matches from dynamodb
+
+    Arguments:
+        match_id {int} -- The match_id to lookup and delete
+    """
     client = boto3.client('dynamodb')
     query_response = client.query(
         TableName=DYNAMO_TABLE_NAME,
@@ -451,7 +534,6 @@ def delete_match_events(match_id):
     )
     items = query_response.get('Items')
     delete_queue = []
-    logging.info('Found %d items', len(items))
     for item in items:
         delete_queue.append({
             'DeleteRequest': {
@@ -469,6 +551,12 @@ def delete_match_events(match_id):
 
 
 def check_for_updates():
+    """Looks for events in ongoing matches and returns a list of new events
+    only.
+
+    Returns:
+        [{events}] -- List of events to send to Slack
+    """
     live_matches, players = get_current_matches()
     existing_match_ids = [m['idMatch'] for m in live_matches]
     missing_matches = get_missing_matches(existing_match_ids)
@@ -518,6 +606,11 @@ def check_for_updates():
 
 
 def send_event(event):
+    """Sends a message to Slack
+
+    Arguments:
+        event {string} -- The message to send to Slack
+    """
     headers = {'Content-Type': 'application/json'}
     payload = {'text': event}
 
@@ -539,14 +632,20 @@ def send_event(event):
 
 
 def main(event, __):
+    """Primary lambda function that handles incoming requests
+
+    Arguments:
+        event {event} -- Lambda event
+        __ {context} -- Lambda context (unused)
+    """
     if event['type'] == 'daily_matches':
         for competition in WC_COMPETITION:
             matches = get_daily_matches(competition)
             send_event(matches)
     elif event['type'] == 'updates':
         events = check_for_updates()
-        for event in events:
-            send_event(event['message'])
+        for match_event in events:
+            send_event(match_event['message'])
 
 
 if __name__ == '__main__':
