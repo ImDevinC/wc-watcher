@@ -1,6 +1,6 @@
 # Required variables
-variable "competition" {
-  default = 103 # Womens World Cup
+variable "competitions" {
+  type = "list"
 }
 
 variable "webhook_url" {

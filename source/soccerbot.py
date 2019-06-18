@@ -1,11 +1,8 @@
-import json
 import os
 import os.path
 import logging
+import json
 from enum import Enum
-import time
-import asyncio
-from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
 import requests
 import boto3
@@ -13,7 +10,7 @@ from boto3.dynamodb.conditions import Key, Attr
 
 logging.getLogger().setLevel(os.environ['LOG_LEVEL'].upper())
 
-WC_COMPETITION = os.environ.get('COMPETITION', '')  # 17 for only WC matches
+WC_COMPETITION = os.environ.get('COMPETITION', '').split(',')
 CHANNEL = os.environ.get('CHANNEL', '')
 BOT_NAME = os.environ.get('BOT_NAME', '')
 ICON_EMOJI = os.environ.get('ICON_EMOJI', '')
@@ -25,6 +22,7 @@ NOW_URL = '/live/football/now'
 # IdCompetition/IdSeason/IdStage/IdMatch
 MATCH_URL = '/timelines/{}/{}/{}/{}?language=en-US'
 DAILY_URL = '/calendar/matches?from={}Z&to={}Z&idCompetition={}&language=en-US'
+COMPETITIONS_URL = '/competitions/{}'
 PLAYER_URL = ''
 TEAM_URL = ''
 
@@ -32,6 +30,7 @@ FLAGS = {
     'ARG': ':flag-ar:',
     'AUS': ':flag-au:',
     'BEL': ':flag-be:',
+    'BOL': ':flag-bo:',
     'BRA': ':flag-br:',
     'CAN': ':flag-ca:',
     'CHI': ':flag-cl:',
@@ -41,6 +40,7 @@ FLAGS = {
     'CRC': ':flag-cr:',
     'CRO': ':flag-hr:',
     'DEN': ':flag-dk:',
+    'ECU': ':flag-ec:',
     'EGY': ':flag-eg:',
     'ENG': ':flag-england:',
     'ESP': ':flag-es:',
@@ -60,9 +60,11 @@ FLAGS = {
     'NOR': ':flag-no:',
     'NZL': ':flag-nz:',
     'PAN': ':flag-pa:',
+    'PAR': ':flag-py:',
     'PER': ':flag-pe:',
     'POL': ':flag-pl:',
     'POR': ':flag-pt:',
+    'QAT': ':flag-qa:',
     'RSA': ':flag-za:',
     'RUS': ':flag-ru:',
     'SCO': ':flag-scotland:',
@@ -73,6 +75,7 @@ FLAGS = {
     'THA': ':flag-th:',
     'TUN': ':flag-tn:',
     'URU': ':flag-uy:',
+    'VEN': ':flag-ve:',
     'ZAF': ':flag-za:'
 }
 
@@ -130,15 +133,29 @@ class Period(Enum):
     PENALTY_SHOOTOUT = 11
 
 
-def get_daily_matches():
+def get_daily_matches(competition):
     daily_matches = ''
+
+    try:
+        match_info_url = FIFA_URL + COMPETITIONS_URL.format(competition)
+        response = requests.get(match_info_url)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as ex:
+        logging.error('Failed to get competition info. %s', ex)
+        return daily_matches
+
+    competition_name = ''
+    if len(response.json()['Name']):
+        competition_name = response.json()['Name'][0]['Description']
+
     now = datetime.utcnow()
     start_time = now.strftime("%Y-%m-%dT%H:00:00")
     now = now + timedelta(days=1)
     end_time = now.strftime("%Y-%m-%dT%H:00:00")
     try:
         daily_url = FIFA_URL + \
-            DAILY_URL.format(start_time, end_time, WC_COMPETITION)
+            DAILY_URL.format(start_time, end_time, competition)
+        logging.info(daily_url)
         response = requests.get(daily_url)
         response.raise_for_status()
     except requests.exceptions.HTTPError as ex:
@@ -146,7 +163,7 @@ def get_daily_matches():
         return daily_matches
 
     if response.json()['Results']:
-        daily_matches = '*Todays Matches:*\n'
+        daily_matches = '*Todays Matches for {}:*\n'.format(competition_name)
     for match in response.json()['Results']:
         home_team = match['Home']
         home_team_id = home_team['IdCountry']
@@ -176,7 +193,7 @@ def get_current_matches():
 
     for match in response.json()['Results']:
         id_competition = match['IdCompetition']
-        if WC_COMPETITION and WC_COMPETITION != id_competition:
+        if WC_COMPETITION and id_competition not in WC_COMPETITION:
             continue
         id_season = match['IdSeason']
         id_stage = match['IdStage']
@@ -523,8 +540,9 @@ def send_event(event):
 
 def main(event, __):
     if event['type'] == 'daily_matches':
-        matches = get_daily_matches()
-        send_event(matches)
+        for competition in WC_COMPETITION:
+            matches = get_daily_matches(competition)
+            send_event(matches)
     elif event['type'] == 'updates':
         events = check_for_updates()
         for event in events:
@@ -532,4 +550,4 @@ def main(event, __):
 
 
 if __name__ == '__main__':
-    main({'type': 'updates'}, None)
+    main({'type': 'daily_matches'}, None)

@@ -8,7 +8,7 @@ resource "aws_lambda_function" "main" {
 
   environment {
     variables {
-      COMPETITION       = "${var.competition}"
+      COMPETITION       = "${join(",", var.competitions)}"
       LOG_LEVEL         = "${var.log_level}"
       WEBHOOK_URL       = "${var.webhook_url}"
       CHANNEL           = "${var.channel}"
