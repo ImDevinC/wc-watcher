@@ -439,6 +439,7 @@ def save_matches(event_list):
                 'Item': {
                     'match_id': {'N': event['match']},
                     'event_id': {'N': event['event']},
+                    'event_type': {'N': str(event['type'])},
                     'stage': {'N': event['stage']},
                     'season': {'N': event['season']},
                     'competition': {'N': event['competition']},
@@ -481,8 +482,11 @@ def check_for_existing_events(match, event_list):
     )
     items = query_response.get('Items')
     for event in items:
-        if event['event_id']['N'] in event_list:
-            event_list.pop(event['event_id']['N'])
+        event_id = event['event_id']['N']
+        event_type_match = 'event_type' not in event or event['event_type']['N'] == event_list[event_id]
+        if event_id in event_list and event_type_match:
+            #event_list.pop(event['event_id']['N'])
+            del event_list[event_id]
 
     return event_list
 
@@ -588,6 +592,7 @@ def check_for_updates():
             elif not match['idMatch'] in done_matches:
                 save_events.append({
                     'event': event,
+                    'type': event_list[event]['type'],
                     'match': match['idMatch'],
                     'competition': match['idCompetition'],
                     'season': match['idSeason'],
@@ -649,4 +654,4 @@ def main(event, __):
 
 
 if __name__ == '__main__':
-    main({'type': 'daily_matches'}, None)
+    main({'type': 'updates'}, None)
