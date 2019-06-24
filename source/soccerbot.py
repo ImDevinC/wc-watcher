@@ -483,11 +483,11 @@ def check_for_existing_events(match, event_list):
     items = query_response.get('Items')
     for event in items:
         event_id = event['event_id']['N']
-        event_type_match = 'event_type' not in event or event['event_type']['N'] == event_list[event_id]
+        event_type_match = 'event_type' not in event or event['event_type']['N'] == str(event_list[event_id]['type'])
         if event_id in event_list and event_type_match:
             #event_list.pop(event['event_id']['N'])
             del event_list[event_id]
-
+    
     return event_list
 
 
