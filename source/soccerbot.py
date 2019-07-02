@@ -411,6 +411,7 @@ def build_event(player_list, current_match, event):
     elif EventType.has_value(event['type']):
         event_message = None
     else:
+        logging.debug('Missing event: %s', event)
         event_message = None
 
     if extra_info:
@@ -420,10 +421,9 @@ def build_event(player_list, current_match, event):
             event_message += '\n> {}'.format(active_team)
 
     if event_message:
-        logging.debug('Sending event: %s', event_message)
+        logging.debug('Saving event: %s', event_message)
         return {'message': event_message}
     
-    logging.debug('Missing event: %s', event)
     return None
 
 
@@ -586,7 +586,7 @@ def check_for_updates():
         for event in event_list:
             event_notification = build_event(
                 player_list, current_match, event_list[event])
-            if not event_notification is None:
+            if event_notification:
                 return_events.append(event_notification)
             if event_list[event]['type'] == EventType.MATCH_END.value:
                 done_matches.append(match['idMatch'])
@@ -632,6 +632,7 @@ def send_event(event):
         payload['icon_emoji'] = ICON_EMOJI
 
     try:
+        logging.debug('Sending event: %s', event)
         response = requests.post(
             WEBHOOK_URL, data=json.dumps(payload), headers=headers)
         response.raise_for_status()
