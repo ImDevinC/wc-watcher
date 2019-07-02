@@ -422,7 +422,8 @@ def build_event(player_list, current_match, event):
     if event_message:
         logging.debug('Sending event: %s', event_message)
         return {'message': event_message}
-
+    
+    logging.debug('Missing event: %s', event)
     return None
 
 
@@ -433,6 +434,7 @@ def save_matches(event_list):
         event_list [{event_info}] -- List of events to save
     """
     items = []
+    logging.debug('Saving events: %s', event_list)
     for event in event_list:
         items.append({
             'PutRequest': {
@@ -526,6 +528,7 @@ def delete_match_events(match_id):
     Arguments:
         match_id {int} -- The match_id to lookup and delete
     """
+    logging.debug('Deleting events for %s', match_id)
     client = boto3.client('dynamodb')
     query_response = client.query(
         TableName=DYNAMO_TABLE_NAME,
@@ -634,6 +637,7 @@ def send_event(event):
         response.raise_for_status()
     except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError) as ex:
         logging.error('Failed to send message. %s', ex)
+        raise ex
 
 
 def main(event, __):
