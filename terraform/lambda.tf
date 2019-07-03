@@ -5,6 +5,7 @@ resource "aws_lambda_function" "main" {
   handler          = "soccerbot.main"
   source_code_hash = "${base64sha256(file("../deployment.zip"))}"
   runtime          = "python3.7"
+  timeout          = 10
 
   environment {
     variables {

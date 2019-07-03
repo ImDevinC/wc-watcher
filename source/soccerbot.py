@@ -587,7 +587,7 @@ def check_for_updates():
                 player_list, current_match, event_list[event])
             if event_notification:
                 return_events.append(event_notification)
-                logging.info('Appended new event: %d items', len(size(return_events)))
+                logging.info('Appended new event: %d items', len(return_events))
             if event_list[event]['type'] == EventType.MATCH_END.value:
                 done_matches.append(match['idMatch'])
                 save_events = [
@@ -657,7 +657,7 @@ def main(event, __):
         events = check_for_updates()
         logging.info('Got %d events', len(events))
         for match_event in events:
-            logging.info('Preparing to send event message', match_event)
+            logging.info('Preparing to send event message %s', match_event)
             send_event(match_event['message'])
 
 
