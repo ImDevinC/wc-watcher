@@ -411,7 +411,7 @@ def build_event(player_list, current_match, event):
     elif EventType.has_value(event['type']):
         event_message = None
     else:
-        logging.debug('Missing event: %s', event)
+        logging.info('Missing event: %s', event)
         event_message = None
 
     if extra_info:
@@ -421,7 +421,7 @@ def build_event(player_list, current_match, event):
             event_message += '\n> {}'.format(active_team)
 
     if event_message:
-        logging.debug('Saving event: %s', event_message)
+        logging.info('Saving event: %s', event_message)
         return {'message': event_message}
     
     return None
@@ -434,7 +434,6 @@ def save_matches(event_list):
         event_list [{event_info}] -- List of events to save
     """
     items = []
-    logging.debug('Saving events: %s', event_list)
     for event in event_list:
         items.append({
             'PutRequest': {
@@ -588,6 +587,7 @@ def check_for_updates():
                 player_list, current_match, event_list[event])
             if event_notification:
                 return_events.append(event_notification)
+                logging.info('Appended new event: %d items', len(size(return_events)))
             if event_list[event]['type'] == EventType.MATCH_END.value:
                 done_matches.append(match['idMatch'])
                 save_events = [
@@ -610,6 +610,7 @@ def check_for_updates():
         delete_match_events(match_id)
 
     save_matches(save_events)
+    logging.info('Returning %d events', len(return_events))
     return return_events
 
 
@@ -632,7 +633,7 @@ def send_event(event):
         payload['icon_emoji'] = ICON_EMOJI
 
     try:
-        logging.debug('Sending event: %s', event)
+        logging.info('Sending event: %s', event)
         response = requests.post(
             WEBHOOK_URL, data=json.dumps(payload), headers=headers)
         response.raise_for_status()
@@ -654,7 +655,9 @@ def main(event, __):
             send_event(matches)
     elif event['type'] == 'updates':
         events = check_for_updates()
+        logging.info('Got %d events', len(events))
         for match_event in events:
+            logging.info('Preparing to send event message', match_event)
             send_event(match_event['message'])
 
 
