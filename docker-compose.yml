@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  soccerbot:
+    build:
+      dockerfile: Dockerfile.local
+    environment:
+      - COMPETITION=
+      - LOG_LEVEL=
+      - WEBHOOK_URL=
+      - DYNAMO_TABLE_NAME=
+      - TIMER=

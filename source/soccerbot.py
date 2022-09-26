@@ -4,10 +4,12 @@ table to prevent reposting on the next run. Once the match is over,
 the dynamodb table is cleared of all events for that match.
 The list of daily matches can also be retrieved.
 """
+from concurrent.futures import thread
 import os
 import os.path
 import logging
 import json
+import time
 from enum import Enum
 from datetime import datetime, timedelta
 import requests
@@ -21,6 +23,7 @@ BOT_NAME = os.environ.get('BOT_NAME', '')
 ICON_EMOJI = os.environ.get('ICON_EMOJI', '')
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL', '')
 DYNAMO_TABLE_NAME = os.environ['DYNAMO_TABLE_NAME']
+TIMER = int(os.environ.get('TIMER', 0))
 
 FIFA_URL = 'https://api.fifa.com/api/v1'
 NOW_URL = '/live/football/now'
@@ -433,6 +436,7 @@ def save_matches(event_list):
     Arguments:
         event_list [{event_info}] -- List of events to save
     """
+    return
     items = []
     for event in event_list:
         items.append({
@@ -503,6 +507,7 @@ def get_missing_matches(live_matches):
         [{match}] -- List of missing matches
     """
     return_matches = []
+    return return_matches
     client = boto3.client('dynamodb')
     query_response = client.scan(
         TableName=DYNAMO_TABLE_NAME,
@@ -527,6 +532,7 @@ def delete_match_events(match_id):
     Arguments:
         match_id {int} -- The match_id to lookup and delete
     """
+    return
     logging.debug('Deleting events for %s', match_id)
     client = boto3.client('dynamodb')
     query_response = client.query(
@@ -662,4 +668,9 @@ def main(event, __):
 
 
 if __name__ == '__main__':
-    main({'type': 'updates'}, None)
+    if TIMER > 0:
+        while True:
+            main({'type': 'updates'}, None)
+            time.sleep(TIMER)
+    else:
+        main({'type': 'updates'}, None)
