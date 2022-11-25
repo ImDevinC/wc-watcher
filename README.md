@@ -1,3 +1,5 @@
+# This repository is no longer maintained. I have also moved this logic to a Go libary at https://github.com/imdevinc/go-fifa with a client available at https://github.com/imdevinc/fifa-bot
+
 # Slack wc-watcher
 This bot uses the undocumented FIFA API's to report on World Cup matches. It will check every 60 seconds for new events. The following events are reported:
 + Goals scored
